@@ -3,7 +3,6 @@ import operator
 import hashlib
 from fastapi.staticfiles import StaticFiles
 import json
-import csv
 import numpy as np
 from fastapi import FastAPI
 import requests

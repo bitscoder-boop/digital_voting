@@ -16,12 +16,13 @@ router = APIRouter(prefix="/candidate", tags=["candidate"])
 async def voter_registration(
         first_name: str,
         last_name: str,
-        age: int,
+        age: str,
         location: str,
+        citizenship_number: str,
         picture:  UploadFile = File(...),
         db: Session = Depends(get_db)
         ):
-    if age < 18:
+    if int(age) < 18:
         return {"message": "Age must be greater than 18"}
     picture_file = picture.filename
     picture_extension = picture_file.split('.')[1]
@@ -33,7 +34,8 @@ async def voter_registration(
             last_name = last_name,
             age = age,
             location = location,
-            picture = file_name + '_picture.' + str(picture_extension)
+            picture = file_name + '_picture.' + str(picture_extension),
+            citizenship_number = citizenship_number
             )
     db.add(new_candidate)
     db.commit()
@@ -44,3 +46,9 @@ async def voter_registration(
 def get_candidate_by_id(id: int, db: Session = Depends(get_db)):
     data = db.query(Candidate).filter(Candidate.candidate_id == id).first()
     return data
+
+
+@router.get('/reads')
+def get_all_candidate(db: Session = Depends(get_db)):
+    data = db.query(Candidate).filter().all()
+    return {"data": data}

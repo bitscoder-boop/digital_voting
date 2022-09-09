@@ -15,6 +15,7 @@ class Voter(Base):
     picture = Column(String)
     qr_code = Column(String)
     secret_key = Column(String)
+    citizenship_number = Column(String, unique = True)
 
 
 class Candidate(Base):
@@ -25,3 +26,4 @@ class Candidate(Base):
     age = Column(String)
     location = Column(String)
     picture = Column(String)
+    citizenship_number = Column(String, unique = True)

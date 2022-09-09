@@ -17,8 +17,9 @@ router = APIRouter(prefix="/voter", tags=["voters"])
 async def voter_registration(
         first_name: str,
         last_name: str,
-        age: int,
+        age: str,
         location: str,
+        citizenship_number: str,
         picture:  UploadFile = File(...),
         db: Session = Depends(get_db)
         ):
@@ -28,7 +29,8 @@ async def voter_registration(
             'last_name': last_name,
             'age': age,
             'location': location,
-            'picture': 's'}
+            'picture': 's',
+            'citizenship_number': citizenship_number}
     encrypted_data = hashlib.sha512(str(user_data).encode()).hexdigest()
     writeable_data = [encrypted_data]
     file_name = first_name + datetime.datetime.now().strftime("%y%m%d_%H%M%S%f")
@@ -43,7 +45,8 @@ async def voter_registration(
             location = location,
             picture = file_name + '_picture.' + str(picture_extension),
             qr_code = file_name + '_qr'+ '.png',
-            secret_key = encrypted_data
+            secret_key = encrypted_data,
+            citizenship_number = citizenship_number
             )
     db.add(new_voter)
     db.commit()
@@ -55,4 +58,11 @@ async def voter_registration(
 @router.get("/read/{id}")
 def get_voter_by_id(id: int, db: Session = Depends(get_db)):
     data = db.query(Voter).filter(Voter.voter_id == id).first()
+    return data
+
+
+@router.get("/")
+def get_all_voter(db: Session = Depends(get_db)):
+    # data = db.query(Voter).filter(Voter.voter_id == 1).first()
+    data = db.query(Voter).all()
     return data
