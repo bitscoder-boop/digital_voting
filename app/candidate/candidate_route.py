@@ -13,12 +13,13 @@ from sqlalchemy.orm import Session
 router = APIRouter(prefix="/candidate", tags=["candidate"])
 
 @router.post("/registration")
-async def voter_registration(
+async def candidate_registration(
         first_name: str,
         last_name: str,
         age: str,
         location: str,
         citizenship_number: str,
+        position: int,
         picture:  UploadFile = File(...),
         db: Session = Depends(get_db)
         ):
@@ -35,6 +36,7 @@ async def voter_registration(
             age = age,
             location = location,
             picture = file_name + '_picture.' + str(picture_extension),
+            position = position,
             citizenship_number = citizenship_number
             )
     db.add(new_candidate)

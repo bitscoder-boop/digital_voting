@@ -9,8 +9,7 @@ import requests
 from urllib.parse import urlparse
 from typing import List
 from app.voter import voter_route
-from app.checker import write_voted_to_file
-from app.models import Voter, Candidate
+from app.models import Voter, Candidate, VoteStatus
 from app.candidate import candidate_route
 from app import models
 from fastapi import APIRouter, UploadFile, File, Depends
@@ -29,9 +28,6 @@ app.include_router(voter_route.router)
 app.include_router(candidate_route.router)
 
 Base.metadata.create_all(bind=engine)
-
-
-voted = []
 
 class Blockchain:
 
@@ -149,15 +145,30 @@ def add_transcation(receiver_id: str,
     data_receiver = db.query(Candidate).filter(Candidate.candidate_id == receiver_id).first()
     if not data_receiver:
         return {"success": False, "message": "Candidate not available"}
+    candidate_location = data_receiver.location
+    candidate_position = data_receiver.position
     file_bytes = np.fromfile(qr_code.file, np.uint8)
     file = cv.imdecode(file_bytes, cv.IMREAD_COLOR)
     det = cv.QRCodeDetector()
     sender, _, _ = det.detectAndDecode(file)
-    a = write_voted_to_file(sender)
-    if a is False :
-        return {"success": False, "message": "Already Voted"}
     check_validation = db.query(models.Voter).filter(Voter.secret_key == sender).first()
     if check_validation:
+        user_id = check_validation.voter_id
+        user_location = check_validation.location
+        # check if they are from same locatin
+        if not user_location == data_receiver.location:
+            return {"success" : False, "message": "You cannot vote this person"}
+        # check if user have voted for the same person
+        vote_check = db.query(VoteStatus).filter(
+                VoteStatus.voter_id == user_id,
+                VoteStatus.candidate_id == data_receiver.candidate_id).first()
+        if vote_check:
+            return {"success": False, "message": "Already Voted"}
+        # is user already voted for the position in that location return already voted
+        user_voted_status = db.query(VoteStatus).filter(VoteStatus.voter_id == user_id,
+                VoteStatus.location == candidate_location, VoteStatus.position == candidate_position).first()
+        if user_voted_status:
+            return {"success": False, "message": "Already voted for this position"}
         image_location = "./images/" + str(check_validation.picture)
         known_image = face_recognition.load_image_file(image_location)
         unknown_image = face_recognition.load_image_file(current_image.file)
@@ -165,6 +176,11 @@ def add_transcation(receiver_id: str,
         unknown_encoding = face_recognition.face_encodings(unknown_image)[0]
         results = face_recognition.compare_faces([known_encoding], unknown_encoding)
         if results:
+            new_data = VoteStatus(voter_id = user_id, candidate_id = data_receiver.candidate_id, location = user_location,
+                    position = candidate_position)
+            db.add(new_data)
+            db.commit()
+            db.refresh(new_data)
             index = blockchain.add_transcation(sender, receiver_id)
             return {'message': f'This transactions will be added to Block {index}'}
     return {'message': 'Invalid accounts'}

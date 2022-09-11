@@ -15,6 +15,7 @@ class Voter(Base):
     picture = Column(String)
     qr_code = Column(String)
     secret_key = Column(String)
+    location = Column(Integer)
     citizenship_number = Column(String, unique = True)
 
 
@@ -26,4 +27,15 @@ class Candidate(Base):
     age = Column(String)
     location = Column(String)
     picture = Column(String)
+    location = Column(Integer)
+    position = Column(Integer)
     citizenship_number = Column(String, unique = True)
+
+
+class VoteStatus(Base):
+    __tablename__ = 'votestatus'
+    voted_status_id = Column(Integer, primary_key = True, index = True)
+    voter_id = Column(Integer)
+    candidate_id = Column(Integer)
+    location = Column(Integer)
+    position = Column(Integer)
