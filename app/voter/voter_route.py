@@ -34,7 +34,16 @@ async def voter_registration(
     encrypted_data = hashlib.sha512(str(user_data).encode()).hexdigest()
     writeable_data = [encrypted_data]
     file_name = first_name + datetime.datetime.now().strftime("%y%m%d_%H%M%S%f")
-    img = qrcode.make(encrypted_data)
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=15,
+        border=4,
+    )
+    qr.add_data(encrypted_data)
+    qr.make(fit=True)
+    # img = qrcode.make(encrypted_data)
+    img = qr.make_image()
     img.save(f'./images/{file_name}_qr.png')
     pictures = await picture.read()
     picture_image = Image.open(io.BytesIO(pictures))
